@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": "src",
+    "module": "commonjs"
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"],
+  "target": "ES6",
+  "lib": ["DOM", "ES6", "DOM.Iterable", "ScriptHost", "ES2016.Array.Include"],
+}
