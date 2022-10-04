@@ -41,3 +41,19 @@ export const getPriceBaseId = async (id) => {
   const body = await response.json();
   return get(body, `${id}.usd`, 0);
 };
+
+const getType = (value) => {
+  return Object.prototype.toString.call(value).match(/\s(\w+)/)[1].toLowerCase()
+};
+
+export const checkTypes = ( params, types ) => {
+  const paramsArr = Array.prototype.slice.call(params)
+  let result = true
+  for (let i = 0; i < types.length; ++i) {
+    if (getType(paramsArr[i]) !== types[i]) {
+      console.log('param ' + i + ' must be of type ' + types[i])
+      result = false
+    }
+  }
+  return result
+}
