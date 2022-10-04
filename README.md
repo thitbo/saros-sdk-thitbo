@@ -359,4 +359,32 @@ const onClaimReward = async () => {
 
 }
 
+const [swapServices, setSwapServices] = useState()
+
+useEffect(() => {
+  initSwapService()
+}, [])
+
+const initSwapService = async () => {
+  const newswapServices = new SarosSwapServices({
+    adapter: BaseAPI,
+    connection: genConnectionSolana(),
+    payerAccount: await genOwnerSolana(accountSol),
+    listTokenSolana: window.walletServices.tokenSolana
+  })
+  setSwapServices(newswapServices)
+}
+
+ const onSwap = async () => {
+    const response = await swapServices.onGetSwapRate({
+      fromMint: usdcMint,
+      toMint: c98Mint,
+      amount: '0.1'
+    })
+}
+
+
+
+
+
 ```

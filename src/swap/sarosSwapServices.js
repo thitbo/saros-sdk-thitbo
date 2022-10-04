@@ -31,7 +31,7 @@ export class SarosSwapServices {
     let base;
     let pair;
 
-    const listToken = window.walletServices.tokenSolana;
+    const listToken = this.listTokenSolana;
     const fromCoin = listToken.find((token) => token.mintAddress === fromMint);
     const toCoin = listToken.find((token) => token.mintAddress === toMint);
 
