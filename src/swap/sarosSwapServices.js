@@ -2,7 +2,7 @@
 import { PublicKey } from '@solana/web3.js';
 import BN from 'bn.js';
 import get from 'lodash/get';
-import { checkTypes, convertBalanceToWei } from '../functions';
+import { checkTypes, convertBalanceToWei, validateSolanaAddress } from '../functions';
 import { genOwnerSolana, genConnectionSolana } from '../common';
 import BaseAPI from '../controller/api/BaseAPI';
 import LiquidityAmm from '../liquidity';
@@ -24,10 +24,7 @@ export class SarosSwapServices {
     console.log('test ok type', this.adapter);
   }
 
-  
-
-  async findPoolLiquidity({ fromMint, toMint, slippage = 0.5, amount = 1 }) {
-    // new flow swap  --------------------**------------------**---------------
+  async findPool({ fromMint, toMint, slippage = 0.5, amount = 1 }) {
     let base;
     let pair;
 
@@ -132,7 +129,7 @@ export class SarosSwapServices {
     return uiFee;
   }
 
-  async onGetSwapRate({fromMint, toMint, amount, slippage = 0.5}) {
+  async getRate({fromMint, toMint, amount, slippage = 0.5}) {
 
     const isRightType = checkTypes(
       [fromMint, toMint, amount, slippage = 0.5], 
@@ -167,7 +164,7 @@ export class SarosSwapServices {
     }
   }
 
-  async onGetSwapInstructions({ fromMint, toMint, amount, slippage = 0.5 }) {
+  async getInstructions({ fromMint, toMint, amount, slippage = 0.5 }) {
     const isRightType = checkTypes(
       [fromMint, toMint, amount, slippage], 
       ['string', 'string', 'number', 'number'])
@@ -260,20 +257,71 @@ export class SarosSwapServices {
     }
   }
 
+  async swapSuccess({
+    hash,
+    base, // object
+    pair, // object
+    chain,
+    rate,
+    size ,
+    sizeTo ,
+    price,
+    side, // isBase === true -> buy
+    owner ,
+    swapData,
+    tradeType 
+  }){
 
-  // async fetchTokenSolana() {
-  //   try {
-  //     const getAllTokenSolana = await this.adapter.getData('solanaToken');
-  //     if (getAllTokenSolana) {
-  //       return getAllTokenSolana;
-  //     } else return [];
-  //   } catch (e) {
-  //     console.log(e);
-  //     return [];
-  //   }
-  // }
+    if(!(hash && chain && owner && price && rate && side && size && sizeTo && source && tradeType)){
+      console.log('missing params');
+      return
+    }
 
-  async getTopMintAddressSwap() {
+    if(!validateSolanaAddress([
+      get(base,'fromTokenAccount'),
+      get(base,'fromToken.mintAddress'),
+      get(pair,'toTokenAccount'),
+      get(pair, 'toToken.mintAddress')
+    ])) {
+      console.log('invalid sol address');
+      return
+    }
+
+    await this.adapter.postData('trade/v2', {
+      source: 'saros',
+      hash,
+      base: {
+        price: get(base,'price'),
+        name: get(base,'fromToken.name'),
+        symbol: get(base,'fromToken.symbol'),
+        address: get(base,'fromTokenAccount'),
+        mintAddress: get(base,'fromToken.mintAddress')
+      },
+      pair: {
+        price: get(pair, 'price'),
+        name: get(pair,'toToken.name'),
+        symbol: get(pair,'toToken.symbol'),
+        address: get(pair,'toTokenAccount'),
+        mintAddress: get(pair, 'toToken.mintAddress')
+      },
+      chain: chain,
+      rate: rate,
+      size: size, // amount in
+      sizeTo: sizeTo, // amount ount
+      price: price,
+      side: side,
+      owner: owner,
+      tradeType
+    })
+    await this.adapter.postData('saros/swap', {
+      hash,
+      owner: owner,
+      swapData: swapData
+    })
+  }
+
+
+  async getTopMint() {
     try {
       const response = await this.adapter.getData('saros/token/topMint');
       if (!response) return [];
@@ -286,7 +334,7 @@ export class SarosSwapServices {
     }
   }
 
-  async getHistorySwap({ page = 1, size = 10 }) {
+  async getHistory({ page = 1, size = 10 }) {
     try {
       const params = {
         page: page,
@@ -300,37 +348,4 @@ export class SarosSwapServices {
       return [];
     }
   }
-
-  // async getRecentSwapList() {
-  //   try {
-  //     const res = await this.adapter.getData('favorite', {
-  //       type: 'sarosRecentSwap',
-  //       version: '2',
-  //     });
-
-  //     if (res && res.success) {
-  //       const listRecentSwap = get(res, 'data[0].bonusValue', []);
-  //       return listRecentSwap;
-  //     } else return [];
-  //   } catch (e) {
-  //     console.log(e);
-  //     return [];
-  //   }
-  // }
-
-  // async updateRecentSwapList(list = []) {
-  //   try {
-  //     const resListSwap = await this.adapter.getData('favorite/take', {
-  //       // useBaseAdapter
-  //       type: 'sarosRecentSwap',
-  //       bonusValue: compact(list),
-  //     });
-  //     if (resListSwap && resListSwap.success) {
-  //       return true;
-  //     } else return false;
-  //   } catch (e) {
-  //     console.log(e);
-  //     return false;
-  //   }
-  // }
 }

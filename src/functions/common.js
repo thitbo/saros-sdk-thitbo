@@ -1,3 +1,4 @@
+import { PublicKey } from '@solana/web3.js';
 import bigdecimal from 'bigdecimal';
 import { get } from 'lodash';
 
@@ -52,6 +53,18 @@ export const checkTypes = ( params, types ) => {
   for (let i = 0; i < types.length; ++i) {
     if (getType(paramsArr[i]) !== types[i]) {
       console.log('param ' + i + ' must be of type ' + types[i])
+      result = false
+    }
+  }
+  return result
+}
+
+export const validateSolanaAddress = (listAddress = []) => {
+  let result = true
+  for (let i = 0; i < listAddress.length; ++i) {
+    try {
+      const address = new PublicKey(listAddress[i])
+    } catch (error) {
       result = false
     }
   }
